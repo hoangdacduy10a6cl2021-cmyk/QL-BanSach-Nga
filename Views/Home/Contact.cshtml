@@ -1,0 +1,379 @@
+﻿@model QuanLySach.ViewModels.ContactViewModel
+@{
+    ViewData["Title"] = "Контакты";
+}
+
+<div class="contact-page">
+    <div class="container">
+
+        @if (TempData["ContactSuccess"] != null)
+        {
+            <div class="contact-alert-success">@TempData["ContactSuccess"]</div>
+        }
+
+        <div class="contact-wrapper">
+
+            <!-- LEFT: THÔNG TIN LIÊN HỆ -->
+            <div class="contact-info">
+                <div class="contact-logo">
+                    <img src="~/images/logo.png" alt="Книжный Рай" />
+                    <div>
+                        <h2>Книжный Рай</h2>
+                        <span>— Книжный Рай —</span>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div>
+                        <strong>Наш адрес</strong>
+                        <p>ул. Мясницкая, д. 6/3, стр. 1, Москва, Россия, 101000</p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <strong>Телефон</strong>
+                        <p class="highlight"> 0946029615</p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>E-mail</strong>
+                        <p>Русские-книги@gmail.com</p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <strong>Время работы</strong>
+                        <p>Ежедневно с 9:00 до 21:00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: FORM -->
+            <div class="contact-form">
+                <h3>Напишите нам</h3>
+
+                <form asp-controller="Home" asp-action="Contact" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="contact-validation"></div>
+
+                    <div class="form-group">
+                        <label>Имя</label>
+                        <input asp-for="Name" type="text" placeholder="Введите ваше имя" />
+                        <span asp-validation-for="Name" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input asp-for="Email" type="email" placeholder="Введите ваш e-mail" />
+                        <span asp-validation-for="Email" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Сообщение</label>
+                        <textarea asp-for="Message" rows="5" placeholder="Введите сообщение"></textarea>
+                        <span asp-validation-for="Message" class="field-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn-send">Отправить сообщение</button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- TIN NHẮN CỦA BẠN -->
+        @if (Model.MyMessages.Any())
+        {
+            <div class="my-messages">
+                <h3>Ваши сообщения</h3>
+
+                @foreach (var m in Model.MyMessages)
+                {
+                    <div class="my-message-card">
+                        <div class="my-message-head">
+                            <span class="my-message-date">@m.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            @if (m.AdminReply != null)
+                            {
+                                <span class="my-message-status replied">Đã trả lời</span>
+                            }
+                            else
+                            {
+                                <span class="my-message-status pending">Chưa trả lời</span>
+                            }
+                        </div>
+                        <p class="my-message-text">@m.Message</p>
+
+                        @if (m.AdminReply != null)
+                        {
+                            <div class="my-message-reply">
+                                <strong><i class="fas fa-reply"></i> Ответ от &laquo;Книжный Рай&raquo; — @m.RepliedAt?.ToString("dd/MM/yyyy HH:mm")</strong>
+                                <p>@m.AdminReply</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+<style>
+    .contact-page {
+        padding: 60px 0;
+        background: #fdf8f0;
+    }
+
+    .contact-alert-success {
+        max-width: 900px;
+        margin: 0 auto 24px;
+        padding: 14px 20px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .contact-wrapper {
+        display: flex;
+        gap: 40px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .contact-info {
+        flex: 1;
+        padding: 40px;
+        background: #fff;
+    }
+
+    .contact-logo {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 36px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #eee;
+    }
+
+        .contact-logo img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+        }
+
+        .contact-logo h2 {
+            font-family: 'Playfair Display', serif;
+            color: #b8860b;
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .contact-logo span {
+            color: #999;
+            font-size: 13px;
+        }
+
+    .contact-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+        .contact-item i {
+            font-size: 20px;
+            color: #b8860b;
+            margin-top: 2px;
+            width: 24px;
+        }
+
+        .contact-item strong {
+            display: block;
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .contact-item p {
+            margin: 0;
+            font-size: 15px;
+            color: #333;
+        }
+
+            .contact-item p.highlight {
+                color: #b8860b;
+                font-weight: 700;
+                font-size: 18px;
+            }
+
+    .contact-form {
+        flex: 1;
+        padding: 40px;
+        background: #fafafa;
+    }
+
+        .contact-form h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 24px;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Lato', sans-serif;
+            background: #fff;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+            .form-group input:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #b8860b;
+            }
+
+        .form-group textarea {
+            resize: vertical;
+        }
+
+    .field-error {
+        display: block;
+        color: #c0392b;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .contact-validation ul {
+        margin: 0 0 16px;
+        padding-left: 18px;
+        color: #c0392b;
+        font-size: 13px;
+    }
+
+    .btn-send {
+        width: 100%;
+        padding: 14px;
+        background: #b8860b;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 700;
+        font-family: 'Lato', sans-serif;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        transition: background 0.2s;
+    }
+
+        .btn-send:hover {
+            background: #9a6f00;
+        }
+
+    .my-messages {
+        max-width: 900px;
+        margin: 40px auto 0;
+    }
+
+        .my-messages h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+    .my-message-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        padding: 18px 22px;
+        margin-bottom: 14px;
+    }
+
+    .my-message-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .my-message-date {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .my-message-status {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
+
+        .my-message-status.replied {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .my-message-status.pending {
+            background: #fff3e0;
+            color: #b8860b;
+        }
+
+    .my-message-text {
+        margin: 0 0 10px;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .my-message-reply {
+        background: #fff8e6;
+        border-left: 3px solid #b8860b;
+        border-radius: 6px;
+        padding: 10px 14px;
+    }
+
+        .my-message-reply strong {
+            display: block;
+            color: #b8860b;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .my-message-reply p {
+            margin: 0;
+            font-size: 14px;
+            color: #333;
+        }
+</style>

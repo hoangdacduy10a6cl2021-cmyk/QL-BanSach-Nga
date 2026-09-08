@@ -1,0 +1,132 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - Admin | Книжный Рай</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css?v=3" />
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                Книжный Рай
+                <span>Панель управления</span>
+            </div>
+            <nav>
+                <a asp-controller="QuanTri" asp-action="Index" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                    <i class="fas fa-gauge"></i> Обзор
+                </a>
+                <a asp-controller="QuanTri" asp-action="Books" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Book") == true ? "active" : "")">
+                    <i class="fas fa-book"></i> Управление книгами
+                </a>
+                <a asp-controller="QuanTri" asp-action="Categories" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Categor") == true ? "active" : "")">
+                    <i class="fas fa-tags"></i> Категории
+                </a>
+                <a asp-controller="QuanTri" asp-action="Authors" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Author") == true ? "active" : "")">
+                    <i class="fas fa-feather"></i> Авторы
+                </a>
+                <a asp-controller="QuanTri" asp-action="Publishers" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Publisher") == true ? "active" : "")">
+                    <i class="fas fa-building"></i> Издательства
+                </a>
+                <a asp-controller="QuanTri" asp-action="Orders" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Order") == true ? "active" : "")">
+                    <i class="fas fa-receipt"></i> Заказы
+                </a>
+                <a asp-controller="QuanTri" asp-action="Users" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("User") == true ? "active" : "")">
+                    <i class="fas fa-users"></i> Пользователи
+                </a>
+                <a asp-controller="QuanTri" asp-action="Customers" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Customer") == true ? "active" : "")">
+                    <i class="fas fa-user-group"></i> Клиенты
+                </a>
+                <a asp-controller="QuanTri" asp-action="Messages" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Message") == true ? "active" : "")" style="position:relative;">
+                    <i class="fas fa-envelope"></i> Сообщения
+                    @if ((int)(ViewBag.NewMessagesCount ?? 0) > 0)
+                    {
+                        <span style="position:absolute; top:8px; right:16px; background:#c0392b; color:#fff; font-size:0.65rem; font-weight:700; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center;">@ViewBag.NewMessagesCount</span>
+                    }
+                </a>
+                <a asp-controller="QuanTri" asp-action="Promotions" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Promotion") == true ? "active" : "")">
+                    <i class="fas fa-percent"></i> Промоакции
+                </a>
+                <a asp-controller="QuanTri" asp-action="Statistics" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Statistics" ? "active" : "")">
+                    <i class="fas fa-chart-line"></i> Статистика
+                </a>
+                <a asp-controller="QuanTri" asp-action="Settings" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Settings" ? "active" : "")">
+                    <i class="fas fa-gear"></i> Настройки
+                </a>
+                <div style="padding:14px 20px 6px; font-size:0.7rem; letter-spacing:0.05em; color:rgba(255,255,255,0.4); text-transform:uppercase;">Управление доступом</div>
+                <a asp-controller="QuanTri" asp-action="AdminAccounts" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("AdminAccount") == true ? "active" : "")">
+                    <i class="fas fa-user-shield"></i> Аккаунты администратора
+                </a>
+                <a asp-controller="QuanTri" asp-action="Roles" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Role") == true ? "active" : "")">
+                    <i class="fas fa-key"></i> Роли
+                </a>
+                <a asp-controller="QuanTri" asp-action="Permissions" class="@(ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Permission") == true ? "active" : "")">
+                    <i class="fas fa-lock"></i> Права доступа
+                </a>
+                <a asp-controller="QuanTri" asp-action="ActivityLog" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "ActivityLog" ? "active" : "")">
+                    <i class="fas fa-clock-rotate-left"></i> Журнал действий
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a asp-controller="Home" asp-action="Index"><i class="fas fa-arrow-left"></i> На главную</a>
+                <a asp-controller="Account" asp-action="Logout"><i class="fas fa-right-from-bracket"></i> Выйти</a>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <h1>@ViewBag.Title</h1>
+                <div style="display:flex; align-items:center; gap:20px;">
+                    <form asp-controller="QuanTri" asp-action="Books" method="get" style="display:flex;">
+                        <input type="text" name="searchTerm" placeholder="Поиск книг, авторов..." style="width:220px; padding:8px 12px; border:1px solid #ddd; border-radius:6px 0 0 6px; font-size:0.85rem; outline:none;" />
+                        <button type="submit" style="padding:8px 14px; border:none; background:#b8860b; color:#fff; border-radius:0 6px 6px 0; cursor:pointer;">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                    <div class="lang-selector notranslate">
+                        <span class="lang-current" id="lang-current-label">
+                            <i class="fas fa-globe"></i> 🇷🇺 RU ▾
+                        </span>
+                        <ul class="lang-dropdown">
+                            <li onclick="setLang('en')">🇬🇧 English</li>
+                            <li onclick="setLang('vi')">🇻🇳 Tiếng Việt</li>
+                            <li onclick="setLang('ru')">🇷🇺 Русский</li>
+                        </ul>
+                    </div>
+                    <a asp-controller="QuanTri" asp-action="Orders" style="position:relative; color:#8b6508; font-size:1.15rem; text-decoration:none;">
+                        <i class="fas fa-bell"></i>
+                        @if ((int)(ViewBag.NewOrdersCount ?? 0) > 0)
+                        {
+                            <span style="position:absolute; top:-8px; right:-10px; background:#c0392b; color:#fff; font-size:0.65rem; font-weight:700; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center;">@ViewBag.NewOrdersCount</span>
+                        }
+                    </a>
+                    <div class="admin-profile">
+                        <div class="admin-profile-text">
+                            <div class="name notranslate" translate="no">@Context.Session.GetString("AdminName")</div>
+                            <div class="role">@Context.Session.GetString("AdminRole")</div>
+                        </div>
+                        <div class="admin-avatar notranslate" translate="no">@(Context.Session.GetString("AdminName")?.Substring(0, 1).ToUpper() ?? "A")</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">@TempData["Error"]</div>
+            }
+
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/js/i18n.js?v=2"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
