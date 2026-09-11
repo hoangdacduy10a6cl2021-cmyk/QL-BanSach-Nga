@@ -184,6 +184,12 @@ namespace QuanLySach.Controllers
         // Trang checkout
         public IActionResult Checkout()
         {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+            {
+                TempData["ToastError"] = "Vui lòng đăng nhập để tiến hành thanh toán.";
+                return RedirectToAction("Login", "Account");
+            }
+
             var sessionId = HttpContext.Session.Id;
             var items = _db.CartItems
                 .Where(c => c.SessionId == sessionId)
@@ -203,6 +209,12 @@ namespace QuanLySach.Controllers
         string city, string street, string house, string apartment, string postalCode,
         string deliveryMethod, string paymentMethod)
         {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+            {
+                TempData["ToastError"] = "Vui lòng đăng nhập để tiến hành thanh toán.";
+                return RedirectToAction("Login", "Account");
+            }
+
             var sessionId = HttpContext.Session.Id;
             var items = _db.CartItems
                 .Where(c => c.SessionId == sessionId)
