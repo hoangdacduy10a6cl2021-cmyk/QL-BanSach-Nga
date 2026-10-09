@@ -1,6 +1,11 @@
 ﻿@using Microsoft.EntityFrameworkCore
 @using QuanLySach.Models
 @inject AppDbContext Db
+@{
+    var siteSetting = await Db.SiteSettings.AsNoTracking().FirstOrDefaultAsync();
+    var siteName = string.IsNullOrWhiteSpace(siteSetting?.StoreName) ? "Книжный Рай" : siteSetting!.StoreName;
+    bool IsHttp(string? u) => !string.IsNullOrWhiteSpace(u) && (u.StartsWith("http://") || u.StartsWith("https://"));
+}
 <!DOCTYPE html>
 <html lang="ru" translate="no">
 <head>
@@ -8,7 +13,8 @@
     <meta name="google" content="notranslate" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="~/css/site.css?v=4" />
-    <title>Книжный Рай — Книжный рай </title>
+    <link rel="stylesheet" href="~/css/lang-mobile.css?v=1" />
+    <title>@siteName</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
@@ -88,6 +94,22 @@
                 color: #999;
                 font-size: 13px;
             }
+
+            /* Thẻ sách cao bằng nhau, nút "В корзину" luôn sát đáy (trang chủ dùng _BookCard) */
+            .books-grid .book-card {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .books-grid .book-info {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+            }
+
+                .books-grid .book-info .btn-cart {
+                    margin-top: auto;
+                }
     </style>
 </head>
 <body>
@@ -100,9 +122,9 @@
                 <span><i class="fas fa-envelope"></i> Русские-книги@gmail.com</span>
             </div>
             <div class="top-links">
-                <a href="#" data-i18n="shipping_info">Доставка и оплата</a>
+                <a asp-controller="Home" asp-action="ShippingInfo" data-i18n="shipping_info">Доставка и оплата</a>
                 <a asp-controller="Home" asp-action="About" data-i18n="about_us">О нас</a>
-                <a href="#" data-i18n="contact">Контакты</a>
+                <a asp-controller="Home" asp-action="Contact" data-i18n="contact">Контакты</a>
                 <div class="lang-selector">
                     <span class="lang-current" id="lang-current-label">
                         <i class="fas fa-globe"></i> RU ▾
@@ -132,7 +154,7 @@
                 <input type="text" id="searchInput" placeholder="Поиск книг..."
                        data-i18n-placeholder="search_placeholder"
                        autocomplete="off"
-                       value="@ViewBag.SearchQuery"
+                       value="@(ViewBag.SearchDisplay ?? ViewBag.SearchQuery)"
                        oninput="liveSearch(this.value)"
                        onkeydown="if(event.key==='Enter') goSearch()" />
                 <button onclick="goSearch()"><i class="fas fa-search"></i></button>
@@ -141,6 +163,17 @@
             </div>
 
             <div class="header-actions">
+                <!-- Chọn ngôn ngữ cho MOBILE (top-bar bị ẩn ở <= 768px) -->
+                <div class="lang-selector lang-selector-mobile notranslate" translate="no">
+                    <span class="lang-current">
+                        <i class="fas fa-globe"></i> 🇷🇺 RU ▾
+                    </span>
+                    <ul class="lang-dropdown">
+                        <li onclick="setLang('en')">🇬🇧 English</li>
+                        <li onclick="setLang('vi')">🇻🇳 Tiếng Việt</li>
+                        <li onclick="setLang('ru')">🇷🇺 Русский</li>
+                    </ul>
+                </div>
                 @if (Context.Session.GetString("UserName") != null)
                 {
                     <a asp-controller="Account" asp-action="Profile" class="action-btn">
@@ -158,10 +191,12 @@
                 <a asp-controller="Cart" asp-action="Index" class="action-btn">
                     <i class="fas fa-shopping-cart"></i>
                     @{
+                        // ToList() trước để FinalPrice (thuộc tính tính bằng C#) không bị EF dịch sang SQL
                         var cartTotal = Db.CartItems
                             .Where(c => c.SessionId == Context.Session.Id)
                             .Include(c => c.Book)
-                            .Sum(c => c.Book != null ? c.Book.Price * c.Quantity : 0);
+                            .ToList()
+                            .Sum(c => c.Book != null ? c.Book.FinalPrice * c.Quantity : 0);
                     }
                     <span><span data-i18n="cart">Корзина</span><br /><span id="cart-total-text" class="notranslate">@cartTotal.ToString("N0") ₽</span></span>
                 </a>
@@ -197,8 +232,11 @@
         @RenderBody()
     </main>
 
-    @if (ViewData["HideFooter"] == null || !(bool)ViewData["HideFooter"])
-    {
+    @{
+        // Login/Register/ForgotPassword: ẩn footer trên desktop (giữ như cũ) nhưng vẫn hiện trên mobile
+        var hideFooterOnDesktop = ViewData["HideFooter"] != null && (bool)ViewData["HideFooter"];
+    }
+    <div class="footer-area @(hideFooterOnDesktop ? "hide-on-desktop" : "")">
         <!-- FEATURES BAR -->
         <div class="features-bar">
             <div class="container features-inner">
@@ -237,15 +275,24 @@
         <footer class="site-footer">
             <div class="container footer-inner">
                 <div class="footer-logo">
-                    <img src="~/images/logo.png" alt="Книжный Рай" />
+                    <img src="~/images/logo.png" alt="@siteName" />
                     <div>
-                        <h3>Книжный Рай</h3>
+                        <h3>@siteName</h3>
                         <span data-i18n="tagline">— Книжный рай —</span>
                     </div>
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-vk"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-telegram"></i></a>
+                        @if (IsHttp(siteSetting?.FacebookUrl))
+                        {
+                            <a href="@siteSetting!.FacebookUrl" target="_blank" rel="noopener"><i class="fab fa-facebook"></i></a>
+                        }
+                        @if (IsHttp(siteSetting?.InstagramUrl))
+                        {
+                            <a href="@siteSetting!.InstagramUrl" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>
+                        }
+                        @if (IsHttp(siteSetting?.TelegramUrl))
+                        {
+                            <a href="@siteSetting!.TelegramUrl" target="_blank" rel="noopener"><i class="fab fa-telegram"></i></a>
+                        }
                     </div>
                 </div>
 
@@ -263,9 +310,9 @@
                 <div class="footer-col">
                     <h4 data-i18n="for_buyers">Покупателям</h4>
                     <ul>
-                        <li><a href="#" data-i18n="shipping_info">Доставка и оплата</a></li>
-                        <li><a href="#" data-i18n="returns">Возврат</a></li>
-                        <li><a href="#" data-i18n="help">Помощь</a></li>
+                        <li><a asp-controller="Home" asp-action="ShippingInfo" data-i18n="shipping_info">Доставка и оплата</a></li>
+                        <li><a asp-controller="Home" asp-action="Returns" data-i18n="returns">Возврат</a></li>
+                        <li><a asp-controller="Home" asp-action="Help" data-i18n="help">Помощь</a></li>
                         <li><a asp-controller="Home" asp-action="Contact" data-i18n="contact">Контакты</a></li>
                     </ul>
                 </div>
@@ -273,17 +320,33 @@
                 <div class="footer-col">
                     <h4 data-i18n="contact">Контакты</h4>
                     <ul>
-                        <li><i class="fas fa-phone"></i> 0946029615</li>
-                        <li><i class="fas fa-envelope"></i> Русские-книги@gmail.com</li>
-                        <li><i class="fas fa-map-marker-alt"></i> <span data-i18n="address">ул. Мясницкая, д. 6/3, стр. 1, Москва, Россия, 101000</span></li>
+                        @if (!string.IsNullOrWhiteSpace(siteSetting?.StorePhone))
+                        {
+                            <li><i class="fas fa-phone"></i> @siteSetting!.StorePhone</li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(siteSetting?.StoreEmail))
+                        {
+                            <li><i class="fas fa-envelope"></i> @siteSetting!.StoreEmail</li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(siteSetting?.StoreAddress))
+                        {
+                            <li><i class="fas fa-map-marker-alt"></i> <span class="notranslate">@siteSetting!.StoreAddress</span></li>
+                        }
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p data-i18n="copyright">© 2026 Книжный Рай. Все права защищены.</p>
+                @if (!string.IsNullOrWhiteSpace(siteSetting?.FooterText))
+                {
+                    <p class="notranslate">@siteSetting!.FooterText</p>
+                }
+                else
+                {
+                    <p data-i18n="copyright">© 2026 Книжный Рай. Все права защищены.</p>
+                }
             </div>
         </footer>
-    }
+    </div>
 
     @if (TempData["ToastSuccess"] != null)
     {
@@ -358,8 +421,10 @@
             }
     </style>
 
-    <script src="~/js/site.js?v=3"></script>
+    <script src="~/js/site.js?v=4"></script>
+    <script src="~/js/search-translate.js?v=1"></script>
     <script src="~/js/i18n.js?v=2"></script>
+    <script src="~/js/lang-mobile.js?v=1"></script>
     <script>
             function toggleMobileMenu() {
                 const menu = document.getElementById('main-menu');
@@ -400,7 +465,15 @@
 
                 searchDebounceTimer = setTimeout(async () => {
                     try {
-                        const res = await fetch('/Books/LiveSearch?q=' + encodeURIComponent(value.trim()));
+                        const typed = value.trim();
+                        // DB lưu tiếng Nga -> dịch từ khoá EN/VI sang tiếng Nga trước khi tìm
+                        const query = await toRussianQuery(typed);
+
+                        // Người dùng đã gõ tiếp trong lúc đang dịch -> bỏ kết quả cũ
+                        const input = document.getElementById('searchInput');
+                        if (input && input.value.trim() !== typed) return;
+
+                        const res = await fetch('/Books/LiveSearch?q=' + encodeURIComponent(query));
                         const data = await res.json();
                         renderSearchDropdown(data);
                     } catch (err) {
@@ -413,21 +486,21 @@
                 const dropdown = document.getElementById('searchDropdown');
 
                 if (!items || items.length === 0) {
-                    dropdown.innerHTML = '<div class="search-dropdown-empty">Не найдено</div>';
+                    dropdown.innerHTML = '<div class="search-dropdown-empty">' + t('not_found', 'Не найдено') + '</div>';
                     dropdown.classList.add('show');
                     return;
                 }
 
                 dropdown.innerHTML = items.map(item => `
-                                <a class="search-dropdown-item" href="/Books/Detail/${item.id}">
-                                <img src="${item.image || '/images/no-image.png'}" alt="${item.title}" />
-                                <div class="info">
-                                <span class="title">${item.title}</span>
-                                <span class="author">${item.author || ''}</span>
-                                <span class="price">${formatPrice(item.price)}</span>
-                                </div>
-                                </a>
-                                `).join('');
+                                                        <a class="search-dropdown-item" href="/Books/Detail/${item.id}">
+                                                        <img src="${item.image || '/images/no-image.png'}" alt="${item.title}" />
+                                                        <div class="info">
+                                                        <span class="title">${item.title}</span>
+                                                        <span class="author">${item.author || ''}</span>
+                                                        <span class="price">${formatPrice(item.price)}</span>
+                                                        </div>
+                                                        </a>
+                                                        `).join('');
 
                 dropdown.classList.add('show');
             }
@@ -437,10 +510,13 @@
                 return Number(price).toLocaleString('ru-RU') + ' ₽';
             }
 
-            function goSearch() {
+            async function goSearch() {
                 const value = document.getElementById('searchInput').value.trim();
                 if (value.length === 0) return;
-                window.location.href = '/Books/Search?q=' + encodeURIComponent(value);
+                // DB lưu tiếng Nga -> dịch từ khoá EN/VI sang tiếng Nga trước khi tìm
+                const query = await toRussianQuery(value);
+                window.location.href = '/Books/Search?q=' + encodeURIComponent(query)
+                    + '&orig=' + encodeURIComponent(value);
             }
 
             document.addEventListener('click', function (e) {
